@@ -5,6 +5,7 @@ import { styles } from '../../theme/styles'
 import firebase, { updateProfile } from 'firebase/auth';
 import { auth } from '../../configs/firebaseConfig';
 import { MessageCardComponent } from './components/MessageCardComponent';
+import { NewMessageComponent } from './components/NewMessageComponent';
 
 //Interface - formulario perfil
 interface FormUser {
@@ -42,8 +43,11 @@ export const HomeScreen = () => {
         setFormUser({ name: auth.currentUser?.displayName ?? "" })
     }, []);
 
-    //hook useState: mostrar u ocultar el modal
+    //hook useState: mostrar u ocultar el modal del perfil
     const [showModalProfile, setShowModalProfile] = useState<boolean>(false);
+
+    //hook useState: mostrar u ocultar el modal del message
+    const [showModalMessage, setShowModalMessage] = useState<boolean>(false);
 
     //Función para cambiar los datos del formulario
     const handlerSetValues = (key: string, value: string) => {
@@ -85,7 +89,7 @@ export const HomeScreen = () => {
                 </View>
             </View>
             <Portal>
-                <Modal visible={showModalProfile} contentContainerStyle={styles.modalProfile}>
+                <Modal visible={showModalProfile} contentContainerStyle={styles.modal}>
                     <View style={styles.header}>
                         <Text variant='headlineMedium'>Mi Perfil</Text>
                         <View style={styles.iconEnd}>
@@ -112,8 +116,9 @@ export const HomeScreen = () => {
             <FAB
                 icon="plus"
                 style={styles.fabMessage}
-                onPress={() => console.log('Pressed')}
+                onPress={() => setShowModalMessage(true)}
             />
+            <NewMessageComponent showModalMessage={showModalMessage} setShowModalMessage={setShowModalMessage}/>
         </>
     )
 }
