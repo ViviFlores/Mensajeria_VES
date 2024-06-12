@@ -49,11 +49,27 @@ export const styles = StyleSheet.create({
         flexDirection: 'row',
         paddingHorizontal: 12,
         paddingVertical: 20,
-        alignItems:'center'
+        alignItems: 'center'
     },
-    fabMessage:{
-        position:'absolute',
-        bottom:20,
-        right:15
+    fabMessage: {
+        position: 'absolute',
+        bottom: 20,
+        right: 15
+    },
+    rootDetail: {
+        flex: 1,
+        paddingHorizontal: 20,
+        paddingVertical: 10,
+        backgroundColor: '#fff',
+        gap: 20
+    },
+    textDetail: {
+        fontWeight: 'bold',
+        fontSize: 18
+    },
+    iconSignOut: {
+        marginTop: 25,
+        alignItems: 'center'
     }
+
 })

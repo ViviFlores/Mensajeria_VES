@@ -2,6 +2,8 @@ import React, { useState } from 'react'
 import { Button, Divider, IconButton, Modal, Portal, Text, TextInput } from 'react-native-paper'
 import { styles } from '../../../theme/styles';
 import { View } from 'react-native';
+import { auth, dbRealTime } from '../../../configs/firebaseConfig';
+import { push, ref, set } from 'firebase/database';
 
 //Interface - props | propiedades
 interface Props {
@@ -30,13 +32,29 @@ export const NewMessageComponent = ({ showModalMessage, setShowModalMessage }: P
     }
 
     //Función guardar los mensajes
-    const handlerSaveMessage = () => {
-        if(!formMessage.to || !formMessage.subject || !formMessage.message){
+    const handlerSaveMessage = async () => {
+        if (!formMessage.to || !formMessage.subject || !formMessage.message) {
             return;
         }
-        console.log(formMessage);  
+        //console.log(formMessage);  
         //Almacenar los mensajes en BDD
-
+        //1. Crear la referencia a la BDD - nombre tabla
+        const dbRef = ref(dbRealTime, 'messages/' + auth.currentUser?.uid);
+        //2. Crear colección - mensajes (enrutando)
+        const saveMessage = push(dbRef);
+        //3. Guardar mensajes
+        try {
+            await set(saveMessage, formMessage);
+            //4. Limpiar el formulario
+            setFormMessage({
+                message: '',
+                subject: '',
+                to: ''
+            })
+        } catch (ex) {
+            console.log(ex);
+        }
+        setShowModalMessage(false);
     }
 
     return (

@@ -2,10 +2,12 @@ import React, { useEffect, useState } from 'react'
 import { FlatList, View } from 'react-native'
 import { Avatar, Button, Divider, FAB, IconButton, Modal, Portal, Text, TextInput } from 'react-native-paper'
 import { styles } from '../../theme/styles'
-import firebase, { updateProfile } from 'firebase/auth';
-import { auth } from '../../configs/firebaseConfig';
+import firebase, { signOut, updateProfile } from 'firebase/auth';
+import { auth, dbRealTime } from '../../configs/firebaseConfig';
 import { MessageCardComponent } from './components/MessageCardComponent';
 import { NewMessageComponent } from './components/NewMessageComponent';
+import { onValue, ref } from 'firebase/database';
+import { CommonActions, useNavigation } from '@react-navigation/native';
 
 //Interface - formulario perfil
 interface FormUser {
@@ -13,7 +15,7 @@ interface FormUser {
 }
 
 //Interface - Message
-interface Message {
+export interface Message {
     id: string;
     to: string;
     subject: string;
@@ -31,9 +33,7 @@ export const HomeScreen = () => {
     const [userAuth, setUserAuth] = useState<firebase.User | null>(null);
 
     //hook useState: lista de mensajes
-    const [messages, setMessages] = useState<Message[]>([
-        { id: '1', to: 'Ariel Ron', subject: 'Estudiar', message: 'Estudiar para el jueves!' }
-    ]);
+    const [messages, setMessages] = useState<Message[]>([]);
 
     //useEffect: capturar la data del usuario autenticado
     useEffect(() => {
@@ -41,6 +41,8 @@ export const HomeScreen = () => {
         setUserAuth(auth.currentUser);
         //console.log(auth.currentUser);
         setFormUser({ name: auth.currentUser?.displayName ?? "" })
+        //Función para listar mensajes
+        getAllMessages();
     }, []);
 
     //hook useState: mostrar u ocultar el modal del perfil
@@ -48,6 +50,9 @@ export const HomeScreen = () => {
 
     //hook useState: mostrar u ocultar el modal del message
     const [showModalMessage, setShowModalMessage] = useState<boolean>(false);
+
+    //hook navegación
+    const navigation = useNavigation();
 
     //Función para cambiar los datos del formulario
     const handlerSetValues = (key: string, value: string) => {
@@ -60,6 +65,37 @@ export const HomeScreen = () => {
             displayName: formUser.name
         });
         setShowModalProfile(false);
+    }
+
+    //Función para acceder a la data
+    const getAllMessages = () => {
+        //1. Refrencia a la BDD - tabla
+        const dbRef = ref(dbRealTime, 'messages/' + auth.currentUser?.uid);
+        //2. Consultamos a la BDD
+        onValue(dbRef, (snapshot) => {
+            //3. Capturar la data
+            const data = snapshot.val(); // formato esperado
+            //CONTROLAR QUE LA DATA TENGA INFORMACIÓN
+            if (!data) return;
+            //4. Obtener keys de los mensajes
+            const getKeys = Object.keys(data);
+            //5. Crear un arreglo para almacenar los mensajes de la BDD
+            const listMessages: Message[] = [];
+            getKeys.forEach((key) => {
+                const value = { ...data[key], id: key }
+                listMessages.push(value);
+            })
+            //6. Almacenar en el arreglo del hook
+            setMessages(listMessages);
+        })
+    }
+
+    //Función para cerrar sesión
+    const handlerSignOut = async () => {
+        await signOut(auth);
+        //resetear las rutas
+        //navigation.dispatch(CommonActions.navigate({ name: 'Login' }));
+        navigation.dispatch(CommonActions.reset({ index: 0, routes: [{ name: 'Login' }] }))
     }
 
     return (
@@ -83,7 +119,7 @@ export const HomeScreen = () => {
                 <View>
                     <FlatList
                         data={messages}
-                        renderItem={({ item }) => <MessageCardComponent />}
+                        renderItem={({ item }) => <MessageCardComponent message={item} />}
                         keyExtractor={item => item.id}
                     />
                 </View>
@@ -111,6 +147,14 @@ export const HomeScreen = () => {
                         value={userAuth?.email!}
                         disabled />
                     <Button mode='contained' onPress={handlerUpdateUser}>Actualizar</Button>
+                    <View style={styles.iconSignOut}>
+                        <IconButton
+                            icon="logout"
+                            size={35}
+                            mode='contained'
+                            onPress={handlerSignOut}
+                        />
+                    </View>
                 </Modal>
             </Portal>
             <FAB
@@ -118,7 +162,7 @@ export const HomeScreen = () => {
                 style={styles.fabMessage}
                 onPress={() => setShowModalMessage(true)}
             />
-            <NewMessageComponent showModalMessage={showModalMessage} setShowModalMessage={setShowModalMessage}/>
+            <NewMessageComponent showModalMessage={showModalMessage} setShowModalMessage={setShowModalMessage} />
         </>
     )
 }
