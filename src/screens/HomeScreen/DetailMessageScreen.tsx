@@ -5,7 +5,7 @@ import { styles } from '../../theme/styles';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import { Message } from './HomeScreen';
 import { ref, remove, update } from 'firebase/database';
-import { dbRealTime } from '../../configs/firebaseConfig';
+import { auth, dbRealTime } from '../../configs/firebaseConfig';
 
 export const DetailMessageScreen = () => {
     //hook para capturar los parametros mediante navegación
@@ -38,7 +38,7 @@ export const DetailMessageScreen = () => {
     //Función actualizar la data del mensaje
     const handlerUpdateMessage = async () => {
         //1. Referencia a al BDD - tabla
-        const dbRef = ref(dbRealTime, 'messages/' + editFormMessage.id)
+        const dbRef = ref(dbRealTime, 'messages/' + auth.currentUser?.uid + '/' + editFormMessage.id)
         //2. Actualizar data
         await update(dbRef, { message: editFormMessage.message })
         navigation.goBack();
@@ -47,7 +47,7 @@ export const DetailMessageScreen = () => {
     //Función eliminar la data del mensaje
     const handlerDeleteMessage = async () => {
         //1. Referencia a la BDD - tabla
-        const dbRef = ref(dbRealTime, 'messages/' + editFormMessage.id)
+        const dbRef = ref(dbRealTime, 'messages/' + auth.currentUser?.uid + '/' + editFormMessage.id)
         //2. Eliminar data
         await remove(dbRef);
         navigation.goBack();
